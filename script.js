@@ -59,3 +59,77 @@ const chatData = {
     },
   ],
 };
+
+//element grabs
+const channels = document.querySelectorAll('.channel')
+const chatMessagesEl = document.getElementById('chat-messages')
+const channelTitleEl = document.getElementById('channel-title')
+const chatFormEl = document.getElementById('chat-form')
+const messageInput = document.getElementById('message-input')
+const sendBtn = chatFormEl.querySelector('button')
+const messageTemplate = document.querySelector('template')
+
+let currentChannel = document.querySelector('.channel.active')?.dataset.channel || 'general'
+
+//build a message
+function createMessageElement({ sender, text, fromSelf }) {
+  const node = messageTemplate.content.firstElementChild.cloneNode(true)
+  node.querySelector('.sender').textContent = `${sender}:`
+  node.querySelector('.text').textContent = text
+  if (fromSelf) node.classList.add('self')
+  return node
+}
+
+// switch the channel that's rendering
+function changeChannel(e) {
+  const btn = e.currentTarget
+  const next = btn.dataset.channel
+  if (!next || next === currentChannel) return
+
+  document.querySelector('.channel.active')?.classList.remove('active')
+  btn.classList.add('active')
+  currentChannel = next
+  channelTitleEl.textContent = btn.textContent.trim()
+  populateMessages(currentChannel)
+}
+
+function populateMessages(channelName) {
+  chatMessagesEl.innerHTML = ''
+  const msgs = (chatData[channelName] || [])
+  for (const msg of msgs) {
+    chatMessagesEl.appendChild(createMessageElement(msg))
+  }
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight
+}
+
+//extra credit
+function sendMessage() {
+  const text = messageInput.value.trim()
+  if (!text) return
+
+  const msg = { sender: 'You', text, fromSelf: true }
+
+  if (!chatData[currentChannel]) chatData[currentChannel] = []
+  chatData[currentChannel].push(msg)
+
+  chatMessagesEl.appendChild(createMessageElement(msg))
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight
+
+  messageInput.value = ''
+  messageInput.focus()
+}
+
+function initializeEventListeners() {
+  channels.forEach(btn => btn.addEventListener('click', changeChannel))
+  sendBtn.addEventListener('click', sendMessage)
+  messageInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      sendMessage()
+    }
+  })
+}
+
+//populate the initial chat board and set up event listeners
+initializeEventListeners()
+populateMessages(currentChannel)
